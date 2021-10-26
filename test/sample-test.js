@@ -1,14 +1,37 @@
-const path = require('path');
-const { copyFile } = require('fs/promises');
-const hre = require('hardhat')
 const assert = require('assert')
-const { ethers } = hre
-const { TASK_COMPILE } = require('hardhat/builtin-tasks/task-names');
+const hre = require('hardhat')
+
+const { takeSnapshot, restoreSnapshot } = require('./helpers/snapshot');
+const { simulateDeployer, simulateCleanDeployer } = require('./helpers/deployer');
+const { assertRevert } = require('./helpers/assert-revert');
 
 describe('TestError', function () {
-  let testError
+  let testError;
+  let snapshotId;
 
-  bootstrap();
+  before('take a snapshot', async () => {
+    // In fact we don't need to take the snapshot, 
+    // just accessing the provider will make it fail
+    // if you comment the following line will make the test succeed
+    let provider = hre.ethers.provider;
+    
+    // Not taking the snapshot for the test
+    // snapshotId = await takeSnapshot(hre.ethers.provider);
+  });
+
+  before('simulate deployer', async () => {
+    // Deployment will update a contract and call COMPILE task again
+    await simulateDeployer();
+  })
+
+  after('restore the snapshot', async () => {
+    // Not taking the snapshot for the test
+    // await restoreSnapshot(snapshotId, hre.ethers.provider);
+  });
+
+  after('simulate clean deployment', async () => {
+    await simulateCleanDeployer();
+  })
 
   before('create the contract', async () => {
     const TestError = await ethers.getContractFactory('TestError')
@@ -34,91 +57,3 @@ describe('TestError', function () {
   })
 })
 
-async function assertRevert(tx, expectedMessage) {
-  let error
-
-  try {
-    await (await tx).wait()
-  } catch (err) {
-    error = err
-  }
-
-  if (!error) {
-    throw new Error('Transaction was expected to revert, but it did not')
-  } else if (expectedMessage) {
-    const receivedMessage = error.toString()
-
-    console.log("--+> Revert message received from hardhat: ", receivedMessage);
-    if (
-      !receivedMessage.includes(expectedMessage) 
-    ) {
-      throw new Error(
-        `Transaction was expected to revert with "${expectedMessage}", but reverted with "${receivedMessage}"`,
-      )
-    }
-  }
-}
-
-async function simulateDeployer() {
-  const CONTRACTS = path.join(this.hre.config.paths.root, 'contracts');
-  const TEST_CONTRACTS = path.join(this.hre.config.paths.root, 'test', 'mocks');
-  // Change some contracts
-  await Promise.all([
-    // Create new module
-    copyFile(path.join(TEST_CONTRACTS, 'TestError_updated.sol'), path.join(CONTRACTS, 'TestError.sol')),
-  ]);
-
-  // Recompile
-  await hre.run(TASK_COMPILE, { force: true, quiet: true });
-}
-
-async function simulateCleanDeployer() {
-  const CONTRACTS = path.join(this.hre.config.paths.root, 'contracts');
-  const TEST_CONTRACTS = path.join(this.hre.config.paths.root, 'test', 'mocks');
-  // Restore the contracts
-  await Promise.all([
-    // Create new module
-    copyFile(path.join(TEST_CONTRACTS, 'TestError_original.sol'), path.join(CONTRACTS, 'TestError.sol')),
-  ]);
-
-  // Recompile
-  await hre.run(TASK_COMPILE, { force: true, quiet: true });
-}
-
-function bootstrap() {
-  let snapshotId;
-
-  before('take a snapshot', async () => {
-    snapshotId = await takeSnapshot(hre.ethers.provider);
-  });
-
-  before('simulate deployer', async () => {
-    await simulateDeployer();
-  })
-
-  after('restore the snapshot', async () => {
-    await restoreSnapshot(snapshotId, hre.ethers.provider);
-  });
-
-  after('simulate clean deployment', async () => {
-    await simulateCleanDeployer();
-  })
-}
-
-async function takeSnapshot(provider) {
-  const snapshotId = await provider.send('evm_snapshot', []);
-
-  await mineBlock(provider);
-
-  return snapshotId;
-}
-
-async function restoreSnapshot(snapshotId, provider) {
-  await provider.send('evm_revert', [snapshotId]);
-
-  await mineBlock(provider);
-}
-
-async function mineBlock(provider) {
-  await provider.send('evm_mine');
-}
