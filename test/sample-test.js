@@ -48,7 +48,7 @@ async function assertRevert(tx, expectedMessage) {
   } else if (expectedMessage) {
     const receivedMessage = error.toString()
 
-    console.log(receivedMessage);
+    console.log("--+> Revert message received from hardhat: ", receivedMessage);
     if (
       !receivedMessage.includes(expectedMessage) 
     ) {

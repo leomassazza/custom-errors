@@ -14,13 +14,11 @@ contract TestError {
     }
     
     function setValueA(uint256 newValue) public {
-        console.log("going to set the value", newValue);
-        console.log("current value", _valueA);
         if (newValue == 42) {
-            console.log("Reverting");
+            console.log("--> (contract log) Reverting");
             revert SomeFancyError();
         }
-        console.log("Succedded");
+        console.log("--> (contract log) Succedded");
         _valueA = newValue;
     }
 }

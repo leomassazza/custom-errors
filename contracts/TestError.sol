@@ -16,6 +16,4 @@ contract TestError {
         }
         _valueA = newValue;
     }
-
-    // not that original
 }

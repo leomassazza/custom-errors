@@ -1,15 +1,10 @@
-# Basic Sample Hardhat Project
+# Custom Error playground
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts.
+This small project shows that if there's an update of contracts and recompilation in the tests (simulating a deployment) custom-errors will fail to be properly detected by hardhat the first time, but will succed a second one.
 
-Try running some of the following tasks:
+To test it just get the repo, install the dependencies (npm install) and execute:
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+`rm -drf artifacts  cache && npm test || npm test`
+
+you are going to see that the test will run twice, the first time will fail and the second succeed.
+
