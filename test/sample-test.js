@@ -11,7 +11,7 @@ describe('TestError', function () {
 
   before('take a snapshot', async () => {
     // In fact we don't need to take the snapshot, 
-    // just accessing the provider will make it fail
+    // just accessing the provider will make the test fail
     // if you comment the following line will make the test succeed
     let provider = hre.ethers.provider;
     
